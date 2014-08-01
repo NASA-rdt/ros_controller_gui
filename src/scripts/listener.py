@@ -1,4 +1,7 @@
 #!/usr/bin/env python
+
+#Created by William Baker: GSFC - Summmer 2014
+
 # Software License Agreement (BSD License)
 #
 # Copyright (c) 2008, Willow Garage, Inc.
@@ -33,8 +36,9 @@
 #
 # Revision $Id$
 
-## Simple talker demo that listens to std_msgs/Strings published 
-## to the 'chatter' topic
+## Simple ROS listener:
+#listens for ee_pose/offset which tells how far the desiredPose is from the actualPose of the robot end effector.  this value is used to set the rumble of an xbox controller using the xboxdrv library
+#listens for 
 
 import rospy
 from std_msgs.msg import Float64, Float64MultiArray, String
@@ -44,69 +48,90 @@ from xboxdrvmod import rumble, led
 
 from PyQt4 import QtGui, QtCore
 
-
+#a simple function to map a value from an input range to and output range:
+	# x: the value to be mapped
+	#in_min  in_max: the input range
+	#out_min  out_max: the desrired output range
 def map( x, in_min, in_max, out_min, out_max):
 	return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
 
+# the listener class is the heart of this code
 class Listener():
-	def __init__(self,signal = None):
-		self.THRESHOLD = 0.005
-		self.MAX_OFFSET = 0.05
-		self.MAX_RUMBLE = 250
-		self.MIN_RUMBLE = 30
+	def __init__(self):
+		self.THRESHOLD = 0.005 #controller will have min rumble when at this value, or 0 if below
+		self.MAX_OFFSET = 0.05 #controller will have max rumble when reaches this value
+		self.MAX_RUMBLE = 250 #max rumble value to be output to controller
+		self.MIN_RUMBLE = 30 #minimum rumble that should be felt by user
 		#self.stopped = True;
 		self.last = self.THRESHOLD
 		self.savedPositions = [];
 		self.pose = 0
 		self.pub_goto = rospy.Publisher('ee_pose', Float64MultiArray)
-		self.signal = signal
-
+		rumble()#if rumbling(did it crash again?), stop the rumble
+	#this function is called when a message on the execute topic is recieved
 	def callback_execute(self,data):
 		if data.data == "clearPose":
+			#want to clear saved pose
 			self.savedPositions = []
 			print 'cleared saved positions.'
 		elif data.data == 'nextPose':
+			#go to next pose. would be nice to implement a way to go to a specific pose
 			print 'nextPose'
 			self.pose += 1;
 			if self.pose > len(self.savedPositions):
 				self.pose = 0
 			if self.pose < len(self.savedPositions):
 				self.goTo(self.savedPositions[self.pose])
+	#this function is used to send the robot a new pose
 	def goTo(self,array):
 		self.pub_goto.publish(Float64MultiArray(data=array))
+	#this function is called when we receive data on the ee_pose/feedback topic
+	#currently, this topic is not published often, so this is an exploit to save the position
+	#if things change, you may want to make this a new topic such as ee_pose/save
 	def callback_feedback(self,data):
 		self.savedPositions.append(data.data)
 		print 'have %d saved positions.' % (len(self.savedPositions))
 		for pos in self.savedPositions:
 			print pos
+	#this function is called when we receive data on the ee_pose/offset topic
+	#this data is used to set the rumble of the controller
+		#based on distance from the offset of desired and actual pose
 	def callback_offset(self,data):
 	    #rospy.loginfo(rospy.get_caller_id()+"I heard %s",data.data)
 		if data.data < self.THRESHOLD:
+			#small offset, dont want rumble
 			if self.last > self.THRESHOLD:
+				#rumble was likely set, lets turn it off...
 				#print 'reset rumble'
 				self.last = self.THRESHOLD
 				rumble()
 			return
 		#print 'last:',last,'offset:',data.data
 		if data.data > self.last:
+			#getting farther away..let's increase the rumble
 			rospy.loginfo("Offset: %.4f",data.data)
 			if self.last > self.MAX_OFFSET:
+				#reached the max
 				self.last = self.MAX_OFFSET
+			#map the distance into a range the controller understands
 			rumbleVal = int(map(self.last, \
 				self.THRESHOLD , self.MAX_OFFSET , \
 				self.MIN_RUMBLE , self.MAX_RUMBLE))
 			self.last = self.last * 2
 			#print 'rumbleU',rumbleVal,'lastt:',last
-			rumble(rumbleVal)
+			rumble(rumbleVal)#set the rumble
 		elif data.data < self.last/2:
+			#getting closer... turn down the rumble
 			if self.last < self.THRESHOLD:
+				#reached min
 				self.last = self.THRESHOLD
+			#map into range
 			rumbleVal = int(map(self.last, \
 				self.THRESHOLD , self.MAX_OFFSET , \
 				self.MIN_RUMBLE , self.MAX_RUMBLE))
 			self.last = self.last / 2
 			#print 'rumbleD',rumbleVal
-			rumble(rumbleVal)
+			rumble(rumbleVal)#set rumble
 
 	def main(self):
 

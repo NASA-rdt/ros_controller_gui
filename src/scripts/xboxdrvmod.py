@@ -1,7 +1,15 @@
 #!/usr/bin/env python
 
+#Created by William Baker: GSFC - Summmer 2014
+# a modifcation to the xboxdrvctl file 
+	#used to set the led and rumble of an xbox controller
+
 import dbus,time, threading
 
+#refer to xboxdrvctl for infop about slots and dbus
+#usually the controller is slot 0, so leave that as default
+
+#a function to change the led, 13 is a blinking pattern, refer to xboxdrv for info
 def led(num =13, slot = 0):
 	if num > 15:
 		num = 15
@@ -13,7 +21,9 @@ def led(num =13, slot = 0):
 		_slot.SetLed(num)
 	except dbus.exceptions.DBusException as e:
 		print 'Error setting led...\n',e
-
+# a function to set the rumble
+# only passing one value will set both left and right
+# check the rumble_pattern function below to see how to use the pattern parameter
 def rumble( left = 0, right = -1, slot = 0, pattern = None):
 	if pattern is not None:
 		print 'starting new thread'
@@ -30,6 +40,7 @@ def rumble( left = 0, right = -1, slot = 0, pattern = None):
 	except dbus.exceptions.DBusException as e:
 		print 'Error setting rumble...\n',e
 
+#not happy with basic rumble.. want a rumble pattern? try this out...
 def rumble_pattern( pattern ):
 	for step in range(len(pattern)):
 		if len(pattern[step]) == 2:
@@ -49,6 +60,8 @@ def rumble_pattern( pattern ):
 			rumble(left,right)
 			time.sleep(wait)
 
+# a class tohelp simplify making patterns...
+# just pass in vectors using add()
 class pattern():
 	def __init__(self,name = 'unnamed pattern'):
 		self.name = name

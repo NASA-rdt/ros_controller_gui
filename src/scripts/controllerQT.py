@@ -1,3 +1,6 @@
+# Created by William Baker: GSFC - Summmer 2014
+
+# This module is to be used for Pyside and QT to show and get xbox controller events.
 
 from PyQt4 import QtGui, QtCore
 import js_read

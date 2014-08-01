@@ -1,5 +1,8 @@
 #!/usr/bin/env python
 
+#Modified by William Baker: GSFC - Summmer 2014 
+#Origin: http://rafaelbarreto.wordpress.com/2011/08/27/a-pyqt-widget-for-opencv-camera-preview/
+
 import cv, cv2, sys, numpy, glob
  
 from PyQt4 import QtCore
@@ -7,7 +10,7 @@ from PyQt4 import QtGui
  
  
 class OpenCVQImage(QtGui.QImage):
- 
+
 	def __init__(self, opencvBgrImg, scale = (False)):
 		if scale[0]:
 			opencvBgrImg = cv2.resize(opencvBgrImg,(scale[1],scale[2]))

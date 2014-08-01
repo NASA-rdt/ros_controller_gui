@@ -1,22 +1,28 @@
 #!/usr/bin/env python
 
+#Created by William Baker: GSFC - Summmer 2014
+#this is a GUI for camera views and controller input, with additional buttons and stuff for later use
+#must run as root
+#sudo su
+
 import sys, time, cv2, numpy
 from PyQt4 import QtGui, QtCore
 from multiprocessing import Process, Queue
-import CameraFeed as cf
 import cameraQT as cam
 import controllerQT as con
 from listener import Listener
 
-import rospy
+import rospy #ROS isnt workign too well here yet
 from std_msgs.msg import Int32, String, Float64MultiArray, Float64
 
+#basic function to scale values from input range to output range
 def scale(x, in_min, in_max, out_min, out_max):
 	value = (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
 	value = min(value,out_max)
 	value = max(value, out_min)
 	return value
 
+#still experimental, doesnt seem like a good option, consider removing.
 class rosProccess(QtCore.QThread):
 
 	#This is the signal that will be emitted during the processing.
@@ -31,6 +37,8 @@ class rosProccess(QtCore.QThread):
 		self.rosNode = rosNode
 	def run(self):
 		self.rosNode.main()
+
+#this is just a button with a saved position vector, it doesnt work as intended yet
 class SavedPosition(QtGui.QWidget):
 	def __init__(self,name, position, parent=None):
 		QtGui.QWidget.__init__(self, parent)
@@ -43,17 +51,20 @@ class SavedPosition(QtGui.QWidget):
 		self.position=position
 		self.button = QtGui.QPushButton(self.name, self)
 		self.button.clicked.connect(self.calluser)
-	def calluser(self):
+	def calluser(self):		
+		self.pubExecute.publish('nextPose');
 		info = 'SavedPosition_%s has position length: %d.' % (self.name,len(self.position)) 
 		print(info)
 
+#this is for passing data between widgets and objects in the QT framework
 class Communicate(QtCore.QObject):
     
-    newPose = QtCore.pyqtSignal(Float64MultiArray)
+    newPose = QtCore.pyqtSignal(Float64MultiArray)#this one doesnt work yet
     updateStick = QtCore.pyqtSignal(int, int, int)
     sendCommand = QtCore.pyqtSignal(int)
     sendImage = QtCore.pyqtSignal(numpy.ndarray)
 
+#here is the meat of this burger
 class RoboGUI(QtGui.QWidget):
 	
 	def __init__(self):
@@ -62,17 +73,17 @@ class RoboGUI(QtGui.QWidget):
 	
 	def initUI(self):
 
-		#ROS:
+		#ROS doesnt really work as expected quite yet
+		# but the framework is here
 		
 		self.pubCommands = rospy.Publisher('commands', Int32, queue_size=10)
 		self.pubExecute = rospy.Publisher('execute', String, queue_size=10)
 		self.pubGripperVal = rospy.Publisher('gripper_value', Float64, queue_size=10)
 		self.pubPointEE = rospy.Publisher('ee_pose', Float64MultiArray, queue_size=10)
 		self.pubJointVal = rospy.Publisher('jointVal', Int32, queue_size=10)
-		#rospy.init_node('ControllerGUI', anonymous=True)
+		rospy.init_node('ControllerGUI')
 		self.savedPositions = []
 		self.c = Communicate()
-
 
 		self.layout = QtGui.QHBoxLayout()
 		self.layoutRight = QtGui.QVBoxLayout()
@@ -197,6 +208,8 @@ class RoboGUI(QtGui.QWidget):
 		self.setWindowTitle('Arm Control')
 		self.changeStyle('Cleanlooks')
 		self.show()
+
+#some functions for doing stuff
 	def newPose(self, data):
 		print 'got:',data
 	def goToPosition(self, pressed):
@@ -205,16 +218,18 @@ class RoboGUI(QtGui.QWidget):
 		QtGui.QApplication.setStyle(QtGui.QStyleFactory.create(styleName))
 		QtGui.QApplication.setPalette(QtGui.QApplication.style().standardPalette())
 		#self.changePalette()
-
+#this is to make it bubbly and pretty, because root has different defaults
 	def changePalette(self):
 		if (self.useStylePaletteCheckBox.isChecked()):
 			QtGui.QApplication.setPalette(QtGui.QApplication.style().standardPalette())
 		else:
 			QtGui.QApplication.setPalette(self.originalPalette)
 
-
+#these functions are just place holders for future work
 	def getPosition(self):
-		print 'generating fake joint values...'
+		self.pubExecute.publish('getPose');
+		#rospy.spinOnce()
+		print 'requesting ee_pose, returning fake joint values...'
 		return [1,2,3,4]#want to return real values
 	def addButton(self, name,layout=None, index = -1 ):
 		print 'creating newButton'
@@ -227,21 +242,21 @@ class RoboGUI(QtGui.QWidget):
 				layout.addWidget(newPosition.button)
 		self.savedPositions.append(newPosition)
 		return newPosition
-
+#this is used to create a label
 	def createLabel(self, text):
 		label = QtGui.QLabel(text)
 		label.setAlignment(QtCore.Qt.AlignCenter)
 		label.setMargin(2)
 		label.setFrameStyle(QtGui.QFrame.Box | QtGui.QFrame.Sunken)
 		return label
-
+#doesnt work yet, need to publish stuff
 	def setGripper(self, value):
 		value = scale(value,0.0,100.0,0.0015,0.015)
 		print "Setting gripper to %f" % (value)
-
+#also doesnt work, just add a publisher to the correct topic
 	def setWrist(self, value):
 		print "Setting wrist to %d" % (value)
-
+#hmm this might work... check the publisher
 	def savePosition(self, pressed):
 		print "Saving current position..."
 		name = self.saveName.text()
