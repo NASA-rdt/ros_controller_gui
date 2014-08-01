@@ -1,8 +1,10 @@
-## XBOX controller and camera GUI
-### with ROS interface (for rumble feedback and extra commands)
+### A GUI for dual camera feeds and controlelr input
 
-run controllerGUI_pub.py for xbox controller
-run listerner.py for rumble feedback
+The following must be run as root due to xbox controller permissions
+ensure your ROS variables and $PYTHONPATH are correctly configured for root.
+also if not done at root bash script:
+'source /opt/ros/hydro/setup.sh'
 
-To Do: integrate listener and talker into GUI script
-	-make GUI an rqt plugin with roshandler
+####To open, use: 
+'sudo su'
+'./controllerGUI_pub.py'
