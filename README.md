@@ -18,7 +18,7 @@ Next, you must connect these joystick events with ROS by running the 'joy_node' 
 (ensure the ROS master is already running)
 in a new terminal, type:
 
-'rosrun joy joy_node'
+`rosrun joy joy_node`
 
 If the script returns a red error about unable to open '/dev/input/js*' you may need to change the rosparameters using the 'rosparam set ...' command.
 Refer to the ROS joy package and tutorials on the wiki.
@@ -27,10 +27,10 @@ Finally, in order to achieve saved position states and rumble feedback, you must
 The listener is in the '~/catkin_ros_joy/src/scripts' directory
 
 this too must be run as root:
-'''
+```
 cd ~/catkin_ros_joy/src/scripts
 sudo su
 source /opt/ros/hydro/setup.sh #this sources the ROS environment
 ./listener.py
-'''
+```
 
