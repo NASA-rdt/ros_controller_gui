@@ -181,7 +181,7 @@ class RoboGUI(QtGui.QWidget):
 		for camm in cams:
 			camName = 'Video_'+str(camm)
 			camLabel = self.createLabel(self.tr(camName))
-			camView = cam.CameraWidget(cam.CameraDevice(camm))
+			camView = cam.CameraWidget(cam.CameraDevice(camm),overlay='crosshair')
 			camView.setWidth(300)
 			self.camViews.append(camView)
 			self.layoutCams.addWidget(camLabel)

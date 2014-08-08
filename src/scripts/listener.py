@@ -42,6 +42,7 @@
 
 import rospy
 from std_msgs.msg import Float64, Float64MultiArray, String
+#from sensor_msgs import JoyFeedbackArray
 
 from xboxdrvmod import rumble, led
 
@@ -67,6 +68,7 @@ class Listener():
 		self.savedPositions = [];
 		self.pose = 0
 		self.pub_goto = rospy.Publisher('ee_pose', Float64MultiArray)
+		#self.pub_rumble = rospy.Publisher('joy/set_feedback', JoyFeedbackArray)
 		rumble()#if rumbling(did it crash again?), stop the rumble
 	#this function is called when a message on the execute topic is recieved
 	def callback_execute(self,data):
@@ -105,6 +107,8 @@ class Listener():
 				#print 'reset rumble'
 				self.last = self.THRESHOLD
 				rumble()
+				#rum = JoyFeedbackArray( 1 , 1 , 0 )
+				#self.pub_rumble.publish(rum)
 			return
 		#print 'last:',last,'offset:',data.data
 		if data.data > self.last:
@@ -120,6 +124,11 @@ class Listener():
 			self.last = self.last * 2
 			#print 'rumbleU',rumbleVal,'lastt:',last
 			rumble(rumbleVal)#set the rumble
+			#rumbleVal = map(self.last, \
+			#self.THRESHOLD , self.MAX_OFFSET , \
+			# 0.1 , 1.0 )
+			#rum = JoyFeedbackArray( 1 , 1 , rumbleVal )
+			#self.pub_rumble.publish(rum)
 		elif data.data < self.last/2:
 			#getting closer... turn down the rumble
 			if self.last < self.THRESHOLD:
@@ -132,6 +141,11 @@ class Listener():
 			self.last = self.last / 2
 			#print 'rumbleD',rumbleVal
 			rumble(rumbleVal)#set rumble
+			#rumbleVal = map(self.last, \
+			#self.THRESHOLD , self.MAX_OFFSET , \
+			# 0.1 , 1.0 )
+			#rum = JoyFeedbackArray( 1 , 1 , rumbleVal )
+			#self.pub_rumble.publish(rum)
 
 	def main(self):
 

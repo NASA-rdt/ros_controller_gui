@@ -7,7 +7,65 @@ import cv, cv2, sys, numpy, glob
  
 from PyQt4 import QtCore
 from PyQt4 import QtGui
- 
+
+#a function to add crosshairs, only works for 5,5 right now
+def addCrosshair(frame, gridsize = (11,11) ):
+
+	if gridsize[0] % 2 != 1:
+		gridsize = (gridsize[0] + 1 , gridsize[1] )
+	if gridsize[1] % 2 != 1:
+		gridsize = (gridsize[0], gridsize[1]+1 )
+	#gridsizes are definitely odd.
+	h,w = frame.shape[:2]
+	w = w/gridsize[0]#grid size width
+	h = h/gridsize[1]#grid size height
+	x = []
+	y = []
+	xw = w
+	yh = h
+	for i in range( 0, gridsize[0]-1 ):
+		x.append(xw)
+		xw += w
+	for i in range( 0, gridsize[1]-1 ):
+		y.append(yh)
+		yh += h
+	#print x
+	#print y
+	g = []
+	for i in range( 0, len(x) ):
+		for j in range( 0, len(y) ):
+			g.append( (x[i],y[j]) )
+#	print g
+	#if you want this to work for grids not 10x10...
+	#change these values to be relaitve.
+	'''
+	Wx = 1 #width between V crosshairs
+	Hy = 1 #width between H crosshairs
+	s = len(g)
+	left = (gridsize[0]-Wx)/2
+	right = left+Wx
+	
+	top = (gridsize[1]-Hy)/2
+	bottom = top+Hy
+
+	cv2.line(frame,(left,top),(left,bottom),(0,0,0), thickness = 2)
+	cv2.line(frame,(right,top),(right,bottom),(0,0,0), thickness = 2)
+	'''
+	cv2.line(frame,g[14],g[44],(0,0,0), thickness = 2)
+	cv2.line(frame,g[44],g[41],(0,0,0), thickness = 2)
+
+	cv2.line(frame,g[15],g[45],(0,0,0), thickness = 2)
+	cv2.line(frame,g[45],g[48],(0,0,0), thickness = 2)
+
+	cv2.line(frame,g[51],g[54],(0,0,0), thickness = 2)
+	cv2.line(frame,g[54],g[84],(0,0,0), thickness = 2)
+
+	cv2.line(frame,g[55],g[58],(0,0,0), thickness = 2)
+	cv2.line(frame,g[55],g[85],(0,0,0), thickness = 2)
+
+	
+	
+	return frame
  
 class OpenCVQImage(QtGui.QImage):
 
@@ -25,7 +83,7 @@ class CameraWidget(QtGui.QWidget):
  
 	newFrame = QtCore.pyqtSignal(numpy.ndarray)
  
-	def __init__(self, cameraDevice, parent=None, scale = 1.0):
+	def __init__(self, cameraDevice, parent=None, scale = 1.0, overlay = None):
 		super(CameraWidget, self).__init__(parent)
  
 		self._frame = None
@@ -42,11 +100,14 @@ class CameraWidget(QtGui.QWidget):
 		self.setMinimumSize(w, h)
 		self.setMaximumSize(w, h)
 		self.scaled = (False,w,h)
+		self.overlay = overlay
  
 	@QtCore.pyqtSlot(numpy.ndarray)
 	def _onNewFrame(self, frame):
 		self._frame = frame.copy()#cv.CloneImage(frame)
-		test = cv2.cv.fromarray(self._frame)
+		#test = cv2.cv.fromarray(self._frame)
+		if self.overlay == 'crosshair':
+			addCrosshair(self._frame)
 		self.newFrame.emit(self._frame)
 		self.update()
 	
@@ -115,7 +176,7 @@ class CameraDevice(QtCore.QObject):
 
 	@property
 	def frameSize(self):
-		print 'frameSize'
+		#print 'frameSize'
 		w = self._cameraDevice.get(cv2.cv.CV_CAP_PROP_FRAME_WIDTH)
 		h = self._cameraDevice.get(cv2.cv.CV_CAP_PROP_FRAME_HEIGHT)
 		return int(w), int(h)
@@ -187,14 +248,16 @@ def _main(args):
  
 	
 	app = QtGui.QApplication(args)
- 
+ 	
 	print findDevices()
+	if len(args) < 1:
+		args = [0]
 	print findDevices(args[1:])
 	cams = getCameras(args[1:])
 	widgets = []
 	for cam in range(len(cams)):
 		cameraDevice = CameraDevice(cams[cam])
-		cameraWidget = CameraWidget(cameraDevice)
+		cameraWidget = CameraWidget(cameraDevice,overlay = 'crosshair')
 		cameraWidget2 = CameraWidget(cameraDevice)
 		cameraWidget.setWidth(300)
 		widgets.append(cameraWidget)
