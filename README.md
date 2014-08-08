@@ -34,3 +34,7 @@ source /opt/ros/hydro/setup.sh #this sources the ROS environment
 ./listener.py
 ```
 
+#### for PS3 control
+run the ps3joy node (replaces xboxdrv as used above) and then run the joy_node again to push the joystick info to ROS.
+refer to this tutorial for more info:
+http://wiki.ros.org/ps3joy/Tutorials/PairingJoystickAndBluetoothDongle
