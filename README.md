@@ -8,7 +8,9 @@ also if not done at root bash script:
 
 ####To open, use: 
 ```
+cd ~/catkin_joy_ros/src/scripts
 sudo su
+`source /opt/ros/hydro/setup.sh`
 ./controllerGUI_pub.py
 ```
 to load the camera feeds, the webcams must be plugged in directly to the USB ports of the laptop because the USB hub does not have enough throughput for two webcams.
@@ -21,6 +23,7 @@ in a new terminal, type:
 `rosrun joy joy_node`
 
 If the script returns a red error about unable to open '/dev/input/js*' you may need to change the rosparameters using the 'rosparam set ...' command.
+`rosparam set joy_node/dev "/dev/input/js0"`
 Refer to the ROS joy package and tutorials on the wiki.
 
 Finally, in order to achieve saved position states and rumble feedback, you must run the listener.
